@@ -4,6 +4,9 @@
     "lint": "eslint agent.js"
   },
   "dependencies": {
+    "@eversdk/core": "^1.38.1",
+    "@eversdk/lib-node": "^1.38.1",
+    "bignumber.js": "^9.1.1",
     "ipfs-core": "^0.17.0"
   },
   "devDependencies": {
