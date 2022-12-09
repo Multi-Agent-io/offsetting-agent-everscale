@@ -14,33 +14,21 @@ const { ipfs_topic, auditor_address_config, auditor_seed } = config
 TonClient.useBinaryLibrary(libNode);
 const client = new TonClient({
     network: {
-        endpoints: ENDPOINTS
+        endpoints: ENDPOINTS,
+        message_processing_timeout: 360000
     },
 });
 
-const keyPair = await client.crypto.mnemonic_derive_sign_keys({
+const auditorKeyPair = await client.crypto.mnemonic_derive_sign_keys({
     phrase: auditor_seed
 });
-console.log(`Generated key pair:`);
-console.log(keyPair);
-
 const assetFactoryAddress = '0:05e30bf3eae57adf9f5b6e45d4f55ffbb0dbf6e9b8d7441a67167631ce2675eb'
 const userWalletAdress = "0:8378231949d0945553926f0fd4798c48bcfb4343bea528b6f6383e6bd1b8e4ba"
-
 
 
 async function receiveMsg (msg) {
     try {
         const { log, token_name, token_symbol, auditor } = JSON.parse(new TextDecoder().decode(msg.data))
-        console.log(auditor)
-        let convertedAddress = (await client.utils.convert_address({
-            address: auditor,
-            output_format: {
-                type: "AccountId"
-            },
-        })).address;
-        console.log(`Address in HEX format: ${convertedAddress}`)
-
         if (auditor === auditor_address_config) {
             let assets_to_mint = assets_calculation(log)
             console.log(assets_to_mint)
@@ -62,10 +50,10 @@ function assets_calculation(log) {
 }
 
 async function mintAsset(amount, auditor_address) {
-    const deployRootParams = {
-        send_events: false,
-        message_encode_params: {
+    const paramsOfEncodeInternalMessage = {
             address: assetFactoryAddress,
+            value: new BigNumber(4).shiftedBy(9).toFixed(0),
+            src_address: auditor_address,
             abi: {
                 type: 'Contract',
                 value: AssetFactory.abi,
@@ -78,7 +66,7 @@ async function mintAsset(amount, auditor_address) {
                     symbol: "TST",
                     decimals: 9,
                     owner: auditor_address,
-                    initialSupplyTo: userWalletAdress,
+                    initialSupplyTo: auditor_address,
                     initialSupply: amount * 10 ** 9,
                     deployWalletValue: new BigNumber(0.2).shiftedBy(9).toFixed(0),
                     mintDisabled: false,
@@ -88,14 +76,31 @@ async function mintAsset(amount, auditor_address) {
                     upgradeable: false
                 },
             },
-            signer: signerKeys(keyPair),
-        },
     };
     console.log(`Minting ${amount} tokens`);
-    // Call `sendValue` function
-    try {
-        const response = await client.processing.process_message(deployRootParams);
-        console.log(response.transaction);
+    try {   
+        const internalMessage = await client.abi.encode_internal_message(paramsOfEncodeInternalMessage)
+        const paramsOfSendMessage = {
+            message: internalMessage.message,
+            abi: {
+                type: 'Contract',
+                value: AssetFactory.abi,
+            },
+            send_events: false
+        }
+        const resultOfSendMessage = await client.processing.send_message(paramsOfSendMessage)
+        const paramsOfWaitForTransaction = {
+            message: internalMessage.message,
+            abi: {
+                type: 'Contract',
+                value: AssetFactory.abi,
+            },
+            send_events: false,
+            shard_block_id: resultOfSendMessage.shard_block_id,
+            sending_endpoints: resultOfSendMessage.sending_endpoints
+        }
+        const result = await client.processing.wait_for_transaction(paramsOfWaitForTransaction)
+        console.log(result)
     } catch(error) {
         console.log(error)
         console.log(error.data)
