@@ -1,6 +1,7 @@
 {
     "auditor": "0:0000000000000000000000000000000000000000000000000000000000000000",
     "log": "Qmxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "tokenName": "XRT",
-    "tokenSymbol": "XRT"
+    "tokenName": "GREEN",
+    "tokenSymbol": "GREENSymbol",
+    "user": "0:0000000000000000000000000000000000000000000000000000000000000000"
 }
