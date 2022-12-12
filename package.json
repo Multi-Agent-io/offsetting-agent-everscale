@@ -9,8 +9,7 @@
     "@eversdk/lib-node": "^1.38.1",
     "bignumber.js": "^9.1.1",
     "everscale-inpage-provider": "^0.3.46",
-    "ipfs-core": "^0.17.0",
-    "npm": "^8.7.0"
+    "ipfs-core": "^0.17.0"
   },
   "devDependencies": {
     "eslint": "^8.29.0",

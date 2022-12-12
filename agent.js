@@ -16,13 +16,15 @@ import { EverwalletContract } from './artifacts/EverwalletContract.js';
 import { config } from './config/config.js';
 
 const ipfs = await IPFS.create({ repo: 'ipfs' });
-const ENDPOINTS = ['https://devnet-sandbox.evercloud.dev/graphql'];
-const { ipfsTopic, auditorAddressConfig, auditorSeed } = config;
+const {
+  ipfsTopic, auditorAddressConfig, auditorSeed, endpoint 
+} = config;
+let { assetFactoryAddress } = config;
 
 TonClient.useBinaryLibrary(libNode);
 const client = new TonClient({
   network: {
-    endpoints: ENDPOINTS,
+    endpoints: [endpoint],
   },
 });
 
@@ -30,7 +32,7 @@ const client = new TonClient({
 const auditorKeyPair = await client.crypto.mnemonic_derive_sign_keys({
   phrase: auditorSeed,
 });
-const assetFactoryAddress = new Address('0:05e30bf3eae57adf9f5b6e45d4f55ffbb0dbf6e9b8d7441a67167631ce2675eb');
+assetFactoryAddress = new Address(assetFactoryAddress);
 
 const assetFactoryContract = new Account(AssetFactoryContract, {
   signer: signerNone(),
@@ -120,7 +122,7 @@ async function mintAsset(amount, auditor, tokenName, tokenSymbol, user) {
           message: boc,
         }));
         if (decoded.body_type === MessageBodyType.Event) {
-          console.log(`New Asset deployed at ${decoded.value.root}`);
+          console.log(`${tokenName} Asset deployed at ${decoded.value.root}`);
         }
       }
     } catch (err) {}
